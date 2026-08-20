@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HFpEF Phenotype Calculator</title>
+<meta name="description" content="Bedside calculator assigning incident HFpEF patients to one of five prognostic phenogroups from 10 routine clinical variables." />
+<style>
+  :root {
+    --bg: #F6F8F9;
+    --surface: #FFFFFF;
+    --surface-alt: #EEF2F4;
+    --text: #1C2B33;
+    --text-muted: #5C7480;
+    --border: #D7E1E5;
+    --accent: #2C6E7F;
+    --accent-strong: #1F5561;
+    --accent-soft: #E4EEF0;
+    --focus: #2C6E7F;
+    --pheno-cardiorenal: #C0392B;
+    --pheno-hypertrophic: #8E44AD;
+    --pheno-frail: #E67E22;
+    --pheno-obese: #27AE60;
+    --pheno-denovo: #2980B9;
+    --conf-high: #1E8449;
+    --conf-mod: #B9770E;
+    --conf-low: #909497;
+    --shadow: 0 1px 2px rgba(28,43,51,0.06), 0 4px 14px rgba(28,43,51,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10171C;
+      --surface: #182229;
+      --surface-alt: #1F2A31;
+      --text: #E7EEF1;
+      --text-muted: #93A7B0;
+      --border: #2B3941;
+      --accent: #5FAEC0;
+      --accent-strong: #7FC4D4;
+      --accent-soft: #1C3339;
+      --focus: #7FC4D4;
+      --pheno-cardiorenal: #E1584A;
+      --pheno-hypertrophic: #B071D6;
+      --pheno-frail: #F0975A;
+      --pheno-obese: #4CC98A;
+      --pheno-denovo: #5B9FE0;
+      --conf-high: #3FBE77;
+      --conf-mod: #E0A63D;
+      --conf-low: #7C8B92;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 18px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10171C;
+    --surface: #182229;
+    --surface-alt: #1F2A31;
+    --text: #E7EEF1;
+    --text-muted: #93A7B0;
+    --border: #2B3941;
+    --accent: #5FAEC0;
+    --accent-strong: #7FC4D4;
+    --accent-soft: #1C3339;
+    --focus: #7FC4D4;
+    --pheno-cardiorenal: #E1584A;
+    --pheno-hypertrophic: #B071D6;
+    --pheno-frail: #F0975A;
+    --pheno-obese: #4CC98A;
+    --pheno-denovo: #5B9FE0;
+    --conf-high: #3FBE77;
+    --conf-mod: #E0A63D;
+    --conf-low: #7C8B92;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 18px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Optima, Candara, "Segoe UI", "Noto Sans", sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 2.25rem 1.5rem 4rem;
+  }
+  header.page-head {
+    margin-bottom: 1.75rem;
+  }
+  h1 {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 1.9rem;
+    font-weight: 600;
+    margin: 0 0 0.35rem;
+    text-wrap: balance;
+    color: var(--text);
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.98rem;
+    max-width: 62ch;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 1.4rem 1.5rem;
+  }
+  .card + .card { margin-top: 1.25rem; }
+  .card h2 {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 1rem;
+    color: var(--accent-strong);
+  }
+  .field-group {
+    display: grid;
+    gap: 0.85rem;
+  }
+  .field-section {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0.9rem 0 0.15rem;
+    font-weight: 600;
+  }
+  .field-section:first-child { margin-top: 0; }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 6.5rem;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  input[type="number"] {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-alt);
+    color: var(--text);
+    font: inherit;
+    font-family: "SF Mono", SFMono-Regular, Consolas, Menlo, monospace;
+    font-size: 0.92rem;
+    font-variant-numeric: tabular-nums;
+  }
+  input[type="number"]:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.65rem;
+    background: var(--surface-alt);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .toggle-row label { margin: 0; font-size: 0.85rem; }
+  .switch {
+    position: relative;
+    width: 2.5rem;
+    height: 1.45rem;
+    flex-shrink: 0;
+  }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch .track {
+    position: absolute; inset: 0;
+    background: var(--border);
+    border-radius: 999px;
+    transition: background 0.15s ease;
+  }
+  .switch .thumb {
+    position: absolute; top: 2px; left: 2px;
+    width: 1.15rem; height: 1.15rem;
+    background: var(--surface);
+    border-radius: 50%;
+    transition: transform 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  }
+  .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track + .thumb { transform: translateX(1.05rem); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  select {
+    width: 6.5rem;
+    padding: 0.45rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-alt);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.85rem;
+  }
+
+  .result-name {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    margin: 0.1rem 0 0.3rem;
+    text-wrap: balance;
+  }
+  .conf-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.28rem 0.7rem;
+    border-radius: 999px;
+    letter-spacing: 0.01em;
+  }
+  .conf-high { background: color-mix(in srgb, var(--conf-high) 16%, transparent); color: var(--conf-high); }
+  .conf-mod  { background: color-mix(in srgb, var(--conf-mod) 16%, transparent); color: var(--conf-mod); }
+  .conf-low  { background: color-mix(in srgb, var(--conf-low) 20%, transparent); color: var(--conf-low); }
+
+  .bars { margin-top: 1.1rem; display: grid; gap: 0.55rem; }
+  .bar-row { display: grid; grid-template-columns: 9.5rem 1fr 3.6rem; align-items: center; gap: 0.6rem; }
+  .bar-label { font-size: 0.82rem; color: var(--text); }
+  .bar-track { height: 0.6rem; background: var(--surface-alt); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width 0.25s ease; }
+  .bar-pct { font-family: "SF Mono", SFMono-Regular, Consolas, Menlo, monospace; font-size: 0.82rem; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); }
+
+  .indeterminate-note {
+    margin-top: 0.9rem;
+    padding: 0.7rem 0.85rem;
+    background: color-mix(in srgb, var(--conf-mod) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--conf-mod) 35%, transparent);
+    border-radius: 8px;
+    font-size: 0.83rem;
+    color: var(--text);
+  }
+
+  .caveats {
+    margin-top: 1.25rem;
+    padding: 0.95rem 1.1rem;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .caveats strong { color: var(--text); }
+  .caveats ul { margin: 0.4rem 0 0; padding-left: 1.1rem; }
+  .caveats li { margin-bottom: 0.3rem; }
+
+  footer.page-foot {
+    margin-top: 2.5rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+  footer.page-foot a { color: var(--accent-strong); }
+
+  .theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1.25rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">🌓 Theme</button>
+
+<div class="wrap">
+  <header class="page-head">
+    <h1>Incident HFpEF Phenotype Calculator</h1>
+    <p class="subtitle">Assigns a patient to one of five prognostically distinct HFpEF phenogroups from 10 routine clinical variables. Derived and cross-validated in a 3-hospital Singapore cohort (N=3,772). Research/screening adjunct — not a diagnostic tool.</p>
+  </header>
+
+  <div class="layout">
+    <section class="card" aria-label="Patient inputs">
+      <h2>Patient variables</h2>
+      <div class="field-group" id="form"></div>
+    </section>
+
+    <div>
+      <section class="card" aria-label="Result">
+        <h2>Predicted phenogroup</h2>
+        <div id="resultName" class="result-name">—</div>
+        <div id="confPill" class="conf-pill">—</div>
+        <div id="indetNote" class="indeterminate-note" style="display:none;"></div>
+        <div class="bars" id="bars"></div>
+      </section>
+
+      <section class="card caveats" aria-label="Caveats">
+        <strong>Important caveats</strong>
+        <ul>
+          <li>Screening/research aid, not a diagnostic label. Precision is moderate even where discrimination (AUC) is good.</li>
+          <li>Derived and validated only within a single 3-hospital Singapore cohort — not externally validated.</li>
+          <li>Requires creatinine-derived eGFR (CKD-EPI 2021), echo LV mass index, relative wall thickness (RWT), BMI, haemoglobin, E/e', age, sex, stroke/COPD history.</li>
+          <li>When the top probability is below 60%, treat the assignment as indeterminate and use clinical judgement.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <footer class="page-foot">
+    Research tool accompanying: <em>[manuscript citation to be added on publication]</em>. Source code and coefficients: <a href="https://github.com/" id="repoLink">GitHub repository</a>. Not a substitute for clinical judgement.
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---- Model coefficients (raw units), from TableS_final_score_equations_raw_units.csv ----
+  // order of terms: intercept, age, eGFR, BMI, LVmass, Hb, female, Eprime, stroke, COPD, RWT
+  const COEF = {
+    "Cardiorenal-severe":      [-12.949379341551023, 0.040170894418916206, -0.08534578986883506, 0.04313394852735882, 0.12077074228363142, -0.4087971715527262, -0.5289997360530903, 0.3222236391468176, 0.07245165396142933, -0.5354217175578149, 14.819591943676853],
+    "Hypertrophic-remodeling": [-37.17932404480871, 0.035975131407366114, 0.0053489477439803805, 0.17004046960193916, 0.1467461904879592, 0.11625171534747296, -0.8547320475416497, 0.1316461872549044, 0.1588555016655053, -0.17804994874932767, 36.541555998755136],
+    "Elderly-frail":           [17.312112442422254, 0.030914280603106813, 0.02175195373148282, -0.15577914773994186, -0.06618320006690404, -0.1940679730973354, 0.6434443707896821, 0.0006516063022057156, 0.06666920096657843, 0.42508460371193246, -19.424852622894665],
+    "Obese-metabolic":         [-7.970357483738894, -0.04920547473186378, 0.03400592401708701, 0.08103648145225525, 0.019518190364655148, 0.327316469041127, -0.07637054900711206, -0.17866332910982322, 0.049441747712883566, -0.01861564428077858, 13.890426814111681],
+    "De-novo-low-risk":        [40.78694842767641, -0.0578548316975254, 0.02423896437628487, -0.13843175184161163, -0.22085192306934187, 0.1592969602614603, 0.8166579618121644, -0.27585810359410506, -0.34741810430640035, 0.3070027068759875, -45.82672213364903]
+  };
+  const ORDER = ["Cardiorenal-severe", "Hypertrophic-remodeling", "Elderly-frail", "Obese-metabolic", "De-novo-low-risk"];
+  const COLOR_VAR = {
+    "Cardiorenal-severe": "--pheno-cardiorenal",
+    "Hypertrophic-remodeling": "--pheno-hypertrophic",
+    "Elderly-frail": "--pheno-frail",
+    "Obese-metabolic": "--pheno-obese",
+    "De-novo-low-risk": "--pheno-denovo"
+  };
+
+  const FIELDS = [
+    { key: "age", label: "Age (years)", type: "number", def: 72, min: 18, max: 110, step: 1, section: "Demographics" },
+    { key: "female", label: "Female sex", type: "toggle", def: true, section: null },
+    { key: "egfr", label: "eGFR, CKD-EPI 2021 (mL/min/1.73m²)", type: "number", def: 55, min: 1, max: 200, step: 0.1, section: "Renal & metabolic" },
+    { key: "bmi", label: "BMI (kg/m²)", type: "number", def: 26, min: 10, max: 70, step: 0.1, section: null },
+    { key: "hb", label: "Haemoglobin (g/dL)", type: "number", def: 12.5, min: 4, max: 20, step: 0.1, section: null },
+    { key: "lvmass", label: "LV mass index (g/m²)", type: "number", def: 88, min: 20, max: 250, step: 1, section: "Echocardiography" },
+    { key: "rwt", label: "Relative wall thickness (RWT)", type: "number", def: 0.48, min: 0.2, max: 1.0, step: 0.01, section: null },
+    { key: "eprime", label: "E/e'", type: "number", def: 9, min: 3, max: 40, step: 0.1, section: null },
+    { key: "stroke", label: "Prior stroke", type: "toggle", def: false, section: "History" },
+    { key: "copd", label: "COPD", type: "toggle", def: false, section: null }
+  ];
+
+  const form = document.getElementById("form");
+  const state = {};
+
+  FIELDS.forEach(f => {
+    if (f.section) {
+      const h = document.createElement("div");
+      h.className = "field-section";
+      h.textContent = f.section;
+      form.appendChild(h);
+    }
+    state[f.key] = f.def;
+
+    if (f.type === "number") {
+      const row = document.createElement("div");
+      row.className = "field-row";
+      const lbl = document.createElement("label");
+      lbl.setAttribute("for", "in_" + f.key);
+      lbl.textContent = f.label;
+      const inp = document.createElement("input");
+      inp.type = "number";
+      inp.id = "in_" + f.key;
+      inp.min = f.min; inp.max = f.max; inp.step = f.step;
+      inp.value = f.def;
+      inp.addEventListener("input", () => {
+        state[f.key] = inp.value === "" ? NaN : parseFloat(inp.value);
+        compute();
+      });
+      row.appendChild(lbl);
+      row.appendChild(inp);
+      form.appendChild(row);
+    } else if (f.type === "toggle") {
+      const row = document.createElement("div");
+      row.className = "toggle-row";
+      const lbl = document.createElement("label");
+      lbl.setAttribute("for", "in_" + f.key);
+      lbl.textContent = f.label;
+      const sw = document.createElement("div");
+      sw.className = "switch";
+      const inp = document.createElement("input");
+      inp.type = "checkbox";
+      inp.id = "in_" + f.key;
+      inp.checked = f.def;
+      inp.addEventListener("change", () => { state[f.key] = inp.checked; compute(); });
+      const track = document.createElement("div"); track.className = "track";
+      const thumb = document.createElement("div"); thumb.className = "thumb";
+      sw.appendChild(inp); sw.appendChild(track); sw.appendChild(thumb);
+      row.appendChild(lbl);
+      row.appendChild(sw);
+      form.appendChild(row);
+    }
+  });
+
+  function score(pheno, s) {
+    const c = COEF[pheno];
+    return c[0]
+      + c[1] * s.age
+      + c[2] * s.egfr
+      + c[3] * s.bmi
+      + c[4] * s.lvmass
+      + c[5] * s.hb
+      + c[6] * (s.female ? 1 : 0)
+      + c[7] * s.eprime
+      + c[8] * (s.stroke ? 1 : 0)
+      + c[9] * (s.copd ? 1 : 0)
+      + c[10] * s.rwt;
+  }
+
+  function softmax(scores) {
+    const max = Math.max(...scores);
+    const exps = scores.map(v => Math.exp(v - max));
+    const sum = exps.reduce((a, b) => a + b, 0);
+    return exps.map(v => v / sum);
+  }
+
+  const resultName = document.getElementById("resultName");
+  const confPill = document.getElementById("confPill");
+  const indetNote = document.getElementById("indetNote");
+  const barsEl = document.getElementById("bars");
+
+  function compute() {
+    const anyInvalid = FIELDS.some(f => f.type === "number" && Number.isNaN(state[f.key]));
+    if (anyInvalid) {
+      resultName.textContent = "Enter all values";
+      resultName.style.color = "var(--text-muted)";
+      confPill.style.display = "none";
+      indetNote.style.display = "none";
+      barsEl.innerHTML = "";
+      return;
+    }
+
+    const raw = ORDER.map(p => score(p, state));
+    const probs = softmax(raw);
+    const paired = ORDER.map((p, i) => ({ pheno: p, prob: probs[i] })).sort((a, b) => b.prob - a.prob);
+
+    const top = paired[0];
+    resultName.textContent = top.pheno;
+    resultName.style.color = `var(${COLOR_VAR[top.pheno]})`;
+
+    confPill.style.display = "inline-flex";
+    if (top.prob >= 0.8) {
+      confPill.className = "conf-pill conf-high";
+      confPill.textContent = `High confidence — ${(top.prob * 100).toFixed(0)}%`;
+      indetNote.style.display = "none";
+    } else if (top.prob >= 0.6) {
+      confPill.className = "conf-pill conf-mod";
+      confPill.textContent = `Moderate confidence — ${(top.prob * 100).toFixed(0)}%`;
+      indetNote.style.display = "none";
+    } else {
+      confPill.className = "conf-pill conf-low";
+      confPill.textContent = `Low confidence — ${(top.prob * 100).toFixed(0)}%`;
+      indetNote.style.display = "block";
+      indetNote.innerHTML = `<strong>Indeterminate:</strong> top probability is below 60%. Consider this a boundary case between <strong>${paired[0].pheno}</strong> and <strong>${paired[1].pheno}</strong> — corroborate with clinical judgement rather than treating this as a firm assignment.`;
+    }
+
+    barsEl.innerHTML = "";
+    paired.forEach(({ pheno, prob }) => {
+      const row = document.createElement("div");
+      row.className = "bar-row";
+      const label = document.createElement("div");
+      label.className = "bar-label";
+      label.textContent = pheno;
+      const track = document.createElement("div");
+      track.className = "bar-track";
+      const fill = document.createElement("div");
+      fill.className = "bar-fill";
+      fill.style.width = (prob * 100).toFixed(1) + "%";
+      fill.style.background = `var(${COLOR_VAR[pheno]})`;
+      track.appendChild(fill);
+      const pct = document.createElement("div");
+      pct.className = "bar-pct";
+      pct.textContent = (prob * 100).toFixed(1) + "%";
+      row.appendChild(label);
+      row.appendChild(track);
+      row.appendChild(pct);
+      barsEl.appendChild(row);
+    });
+  }
+
+  compute();
+
+  // theme toggle: cycles system -> light -> dark -> system
+  const root = document.documentElement;
+  const themeBtn = document.getElementById("themeToggle");
+  const stored = localStorage.getItem("hfpef-calc-theme");
+  if (stored) root.setAttribute("data-theme", stored);
+  themeBtn.addEventListener("click", () => {
+    const current = root.getAttribute("data-theme");
+    const next = current === "light" ? "dark" : current === "dark" ? null : "light";
+    if (next) { root.setAttribute("data-theme", next); localStorage.setItem("hfpef-calc-theme", next); }
+    else { root.removeAttribute("data-theme"); localStorage.removeItem("hfpef-calc-theme"); }
+  });
+})();
+</script>
+
+</body>
+</html>
