@@ -31,8 +31,8 @@ that are already part of routine clinical workup:
 - History of stroke
 - History of COPD
 
-Cross-validated performance (5-fold, N=3,772 with complete data):
-**accuracy 82.7%, Cohen's κ = 0.781**, per-phenotype one-vs-rest AUC 0.95–0.99.
+Cross-validated performance (5-fold, N=3,685 with complete data):
+**accuracy 82.4%, Cohen's κ = 0.776**, per-phenotype one-vs-rest AUC 0.95–0.99.
 
 ## How it works
 
