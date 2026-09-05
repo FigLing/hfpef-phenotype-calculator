@@ -22,7 +22,7 @@ that are already part of routine clinical workup:
 
 - Age
 - Sex
-- eGFR (CKD-EPI 2021, race-free)
+- eGFR
 - BMI
 - Haemoglobin
 - Echocardiographic LV mass index
@@ -56,8 +56,6 @@ transmitted or stored anywhere.
   systems.
 - Precision is moderate (~50–75%) even where discrimination (AUC) is good;
   a given assignment should prompt clinical correlation, not replace it.
-- Requires creatinine-derived eGFR (CKD-EPI 2021), not eGFR from another
-  equation.
 
 ## Citation
 

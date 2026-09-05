@@ -319,7 +319,7 @@
         <ul>
           <li>Screening/research aid, not a diagnostic label. Precision is moderate even where discrimination (AUC) is good.</li>
           <li>Derived and validated only within a single 3-hospital Singapore cohort — not externally validated.</li>
-          <li>Requires creatinine-derived eGFR (CKD-EPI 2021), echo LV mass index, relative wall thickness (RWT), BMI, haemoglobin, E/e', age, sex, stroke/COPD history.</li>
+          <li>Requires eGFR, echo LV mass index, relative wall thickness (RWT), BMI, haemoglobin, E/e', age, sex, stroke/COPD history.</li>
           <li>When the top probability is below 60%, treat the assignment as indeterminate and use clinical judgement.</li>
         </ul>
       </section>
@@ -356,7 +356,7 @@
   const FIELDS = [
     { key: "age", label: "Age (years)", type: "number", def: 72, min: 18, max: 110, step: 1, section: "Demographics" },
     { key: "female", label: "Female sex", type: "toggle", def: true, section: null },
-    { key: "egfr", label: "eGFR, CKD-EPI 2021 (mL/min/1.73m²)", type: "number", def: 55, min: 1, max: 200, step: 0.1, section: "Renal & metabolic" },
+    { key: "egfr", label: "eGFR (mL/min/1.73m²)", type: "number", def: 55, min: 1, max: 200, step: 0.1, section: "Renal & metabolic" },
     { key: "bmi", label: "BMI (kg/m²)", type: "number", def: 26, min: 10, max: 70, step: 0.1, section: null },
     { key: "hb", label: "Haemoglobin (g/dL)", type: "number", def: 12.5, min: 4, max: 20, step: 0.1, section: null },
     { key: "lvmass", label: "LV mass index (g/m²)", type: "number", def: 88, min: 20, max: 250, step: 1, section: "Echocardiography" },
